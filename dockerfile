@@ -1,4 +1,4 @@
-FROM golang:latest as builder
+FROM golang:1.20-bullseye as builder
 WORKDIR /ticketservice
 COPY go.* ./
 RUN go mod download
