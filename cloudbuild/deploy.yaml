@@ -2,16 +2,13 @@ steps:
     # Build the container image
   - name: 'gcr.io/cloud-builders/docker'
     id: build
-    dir: 'org-level-recommedations-hub/ticketservice'
     args: ['build','-f','$_DOCKER_FILE', '-t', 'gcr.io/$PROJECT_ID/$_SERVICE:$COMMIT_SHA', '.']
   # Push the container image to Container Registry
   - name: 'gcr.io/cloud-builders/docker'
     id: push
-    dir: 'org-level-recommedations-hub/ticketservice'
     args: ['push', 'gcr.io/$PROJECT_ID/$_SERVICE:$COMMIT_SHA']
   # Deploy container image to Cloud Run Services
   - name: 'gcr.io/google.com/cloudsdktool/cloud-sdk'
-    dir: 'org-level-recommedations-hub/ticketservice'
     entrypoint: gcloud
     args:
     - 'run'
