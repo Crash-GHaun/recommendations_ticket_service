@@ -75,6 +75,11 @@ func checkAndCreateNewTickets() error {
 				u.LogPrint(3,"Failed to get routing information")
 				return err
 			}
+			// Check if the length of routingRows is zero
+			if len(routingRows) == 0 {
+				u.LogPrint(3, "No routing rows found for the given project ID")
+				return fmt.Errorf("No routing rows found for the given project ID")
+			}
 			ticket.TargetContact = routingRows[0].Target
 			ticket.Assignee = routingRows[0].TicketSystemIdentifiers
 			u.LogPrint(1,"Creating new Ticket")
