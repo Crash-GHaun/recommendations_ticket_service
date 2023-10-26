@@ -137,6 +137,7 @@ func (s *SlackTicketService) createChannelAsTicket(ticket *t.Ticket, row t.Recom
 }
 
 func (s *SlackTicketService) createThreadAsTicket(ticket *t.Ticket, row t.RecommendationQueryResult) (string, error) {
+	u.LogPrint(1, "Creating Thread As Ticket")
 	lastSlashIndex := strings.LastIndex(row.TargetResource, "/")
 	secondToLast := strings.LastIndex(row.TargetResource[:lastSlashIndex], "/")
 	// This could be moved to BQ Query. But ehh
@@ -160,7 +161,7 @@ func (s *SlackTicketService) createThreadAsTicket(ticket *t.Ticket, row t.Recomm
 	u.LogPrint(1, "Creating Channel: "+channelName)
 	channel, err := s.createNewChannel(channelName)
 	if err != nil {
-		u.LogPrint(3, "Error creating channel")
+		u.LogPrint(3, "Error creating channel for thread as ticket: %s\n", err)
 		return "", err
 	}
 	// Invite users to the channel
@@ -168,7 +169,7 @@ func (s *SlackTicketService) createThreadAsTicket(ticket *t.Ticket, row t.Recomm
 	if err != nil {
 		// If user is already in channel we should continue
 		if err.Error() != "already_in_channel" {
-			u.LogPrint(3,"Failed to invite users to channel:")
+			u.LogPrint(3,"Failed to invite users to channel: %s\n", err)
 			return channel.ID, err
 		}
 		u.LogPrint(1,"User(s) were already in channel")
