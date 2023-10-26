@@ -61,19 +61,40 @@ func verifyRequestSignature(header http.Header, body []byte) bool {
 }
 
 func (s *SlackTicketService) createNewChannel(channelName string) (*slack.Channel, error){
-	// Check if channel already exists
-	channels, _, err := s.slackClient.GetConversations(&slack.GetConversationsParameters{
-		ExcludeArchived: true,
-	})
-	if err != nil {
-		return nil, err
+	// Realistically we need to store the response in memory and check against
+	// a dictionary, but right now doing testing to confirm this works. 
+	// Commiting to GitHub because I no longer have a slack enterprise account
+	var allChannels []slack.Channel
+
+	for {
+		var cursor string
+		params := &slack.GetConversationsParameters{
+			ExcludeArchived: true,
+			Cursor:          cursor,
+			Limit:           100, // You can set your limit here
+		}
+
+		channels, nextCursor, err := s.slackClient.GetConversations(params)
+		if err != nil {
+			return nil, err
+		}
+
+		// Append current set of channels to allChannels
+		allChannels = append(allChannels, channels...)
+
+		// If there is no next cursor, we have fetched all channels
+		if nextCursor == "" {
+			break
+		}
+
+		// Update the cursor for the next iteration
+		cursor = nextCursor
 	}
-	// One could argue we could store this result in memory or some form of memorystore.
-	// But I'm not sure the length here would get to a performance impact. Happy to adjust
-	// in the future
-	for _, channel := range channels {
+
+	// Now allChannels contains all channels
+	for _, channel := range allChannels {
 		if channel.Name == channelName {
-			u.LogPrint(1,"Channel "+channel.Name+" already exists")
+			u.LogPrint(1, "Channel "+channel.Name+" already exists")
 			return &channel, nil
 		}
 	}
