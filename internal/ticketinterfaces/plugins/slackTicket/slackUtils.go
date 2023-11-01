@@ -61,51 +61,42 @@ func verifyRequestSignature(header http.Header, body []byte) bool {
 }
 
 func (s *SlackTicketService) createNewChannel(channelName string) (*slack.Channel, error){
-	// Realistically we need to store the response in memory and check against
-	// a dictionary, but right now doing testing to confirm this works. 
-	// Commiting to GitHub because I no longer have a slack enterprise account
-	var allChannels []slack.Channel
-
-	for {
-		var cursor string
-		params := &slack.GetConversationsParameters{
-			ExcludeArchived: true,
-			Cursor:          cursor,
-			Limit:           100, // You can set your limit here
-		}
-
-		channels, nextCursor, err := s.slackClient.GetConversations(params)
-		if err != nil {
-			return nil, err
-		}
-
-		// Append current set of channels to allChannels
-		allChannels = append(allChannels, channels...)
-
-		// If there is no next cursor, we have fetched all channels
-		if nextCursor == "" {
-			break
-		}
-
-		// Update the cursor for the next iteration
-		cursor = nextCursor
-	}
-
-	// Now allChannels contains all channels
-	for _, channel := range allChannels {
-		if channel.Name == channelName {
-			u.LogPrint(1, "Channel "+channel.Name+" already exists")
-			return &channel, nil
-		}
+	// Lock the cache because there could be multiple 
+	// goroutines checking channels
+	// and if we create a channel, we don't want to try 
+	// creating multiple.
+	s.cacheMutex.Lock()
+	defer s.cacheMutex.Unlock()
+	channel, exists := s.channelCache[channelName]
+	if exists {
+		// The channel exists, simply return the channel
+		return &channel, nil
 	}
 	// Create channel if it doesn't exist
-	channel, err := s.slackClient.CreateConversation(slack.CreateConversationParams{
+	newChannel, err := s.slackClient.CreateConversation(slack.CreateConversationParams{
 		ChannelName: channelName,
 	})
 	if err != nil {
-		return nil, err
+		// If channel name exists we need to update the cache.
+		if strings.Contains(err.Error(), "name_taken") || strings.Contains(err.Error(), "channel already exists") {
+
+			err = s.updateChannelCache(false)// False lock because it's already locked
+			if err != nil {
+				// Many more errors may come after this because something
+				// went terribly wrong, and now the cache is cleared
+				u.LogPrint(3, "Error creating channel cache: %s", err)
+				return nil, err
+			}
+			// Use recursion since we need to confirm it's created?
+			s.cacheMutex.Unlock()
+			return s.createNewChannel(channelName)
+		} else {
+			return nil, err
+		}
 	}
-	return channel, nil
+	// Add channel to cache
+	s.channelCache[newChannel.Name] = *newChannel
+	return newChannel, nil
 }
 
 

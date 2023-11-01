@@ -19,6 +19,7 @@ import (
 	"os"
 	"regexp"
 	"strconv"
+	"sync"
 
 	"github.com/slack-go/slack"
 	
@@ -33,6 +34,8 @@ type SlackTicketService struct {
 	slackClient *slack.Client
 	slackSigningSecret	string
 	channelAsTicket bool
+	channelCache map[string]slack.Channel
+	cacheMutex sync.Mutex
 }
 
 func CreateService() t.BaseTicketService{
@@ -72,5 +75,46 @@ func (s *SlackTicketService) Init() error {
 	}
 	s.channelAsTicket = defaultValue
 	u.LogPrint(1,"CHANNEL_AS_TICKET is set to "+strconv.FormatBool(s.channelAsTicket))
+	u.LogPrint(1, "Creating Channel Cache")
+	s.channelCache = make(map[string]slack.Channel)
+	err = s.updateChannelCache(true)
+	if err != nil {
+		u.LogPrint(4, "Error creating channel cache: %s", err)
+	}
+	return nil
+}
+
+// Function to update the cache
+func (s *SlackTicketService) updateChannelCache(lock bool) error {
+	if(lock){
+		s.cacheMutex.Lock()
+		defer s.cacheMutex.Unlock()
+	}
+	// Clear the cache
+	s.channelCache = make(map[string]slack.Channel)
+
+	var cursor string
+	for {
+		params := &slack.GetConversationsParameters{
+			ExcludeArchived: true,
+			Cursor:          cursor,
+			Limit:           500,
+		}
+
+		channels, nextCursor, err := s.slackClient.GetConversations(params)
+		if err != nil {
+			return err
+		}
+
+		// Populate the cache
+		for _, channel := range channels {
+			s.channelCache[channel.Name] = channel
+		}
+
+		if nextCursor == "" {
+			break
+		}
+		cursor = nextCursor
+	}
 	return nil
 }
