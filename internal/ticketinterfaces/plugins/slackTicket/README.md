@@ -40,6 +40,22 @@ Before you start, you'll need to create a Slack App and give it the required per
 
 5. Navigate to 'Event Subscriptions' on the left-hand menu. Set it to 'On'. In the 'Request URL' field, you'll need to provide the public URL of the server where this service is running. Slack will send a verification request to this URL. If the service is running locally, consider using a service like ngrok to expose your local server.
 
-6. Under 'Subscribe to Bot Events', click 'Add Bot User Event' and add the events you want your bot to listen to.
+**Don't forget the endpoint should include /webhooks**
+
+6. Under 'Subscribe to Bot Events', click 'Add Bot User Event' and add the events you want your bot to listen to. 
+     - `message.channels` - for messages in public channels.
+     - `message.replies` - for messages that are replies in a thread.
 
 7. Go back to 'OAuth & Permissions', click 'Install App to Workspace'. Authorize the app in your workspace, after which you'll be provided with a 'Bot User OAuth Token'. Set this as your environment variable `SLACK_API_TOKEN`.
+
+## Slack Commands
+
+Currently only one command is developed, however commands can be easily added to webhookFunctions.go
+
+### !Snooze
+
+- **Usage**: `!Snooze for <duration> <unit>`
+- **Parameters**:
+  - `<duration>`: Numeric value (e.g., 1, 2, 3)
+  - `<unit>`: Time unit (`days`, `months`, `years`)
+- **Example**: `!Snooze for 3 days` - sets a snooze for 3 days.
