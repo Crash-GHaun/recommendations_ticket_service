@@ -40,7 +40,7 @@ Before you start, you'll need to create a Slack App and give it the required per
 
 5. Navigate to 'Event Subscriptions' on the left-hand menu. Set it to 'On'. In the 'Request URL' field, you'll need to provide the public URL of the server where this service is running. Slack will send a verification request to this URL. If the service is running locally, consider using a service like ngrok to expose your local server.
 
-**Don't forget the endpoint should include /webhooks**
+   **Don't forget the endpoint should include /webhooks**
 
 6. Under 'Subscribe to Bot Events', click 'Add Bot User Event' and add the events you want your bot to listen to. 
      - `message.channels` - for messages in public channels.
