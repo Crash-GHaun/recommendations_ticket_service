@@ -12,6 +12,8 @@ FROM gcr.io/distroless/base
 
 COPY --from=builder ticketservice/ticketservice /ticketservice
 COPY --from=builder ticketservice/plugins/ /plugins
+COPY --from=builder ticketTitleTpl.txt ticketTitleTpl.txt
+COPY --from=builder updateTicketTpl.txt updateTicketTpl.txt
 
 
 CMD ["./ticketservice"]
