@@ -1,0 +1,15 @@
+{{/* 
+    This template is used to generate messages for optimization opportunities.
+    The data is populated from structs defined in internal/ticketInterfaces/baseTicketInterface.go.
+    Each placeholder, like {{.Row.Project_name}}, corresponds to a field in the RecommendationQueryResult struct.
+    Please ensure that the field names in the template match exactly with those in the struct.
+*/}}
+
+We found an optimization opportunity in project {{.Row.Project_name}}. See more details below:
+
+Recommendation type: {{.Row.Recommender_subtype}}
+Saving potential: {{.Row.Impact_cost_unit}}
+Details: {{.Row.Description}}
+Resource: {{.Row.TargetResource}}
+
+The #devfinops team will be happy to answer questions and support changes if necessary.

@@ -15,8 +15,7 @@
 package main
 
 import (
-	"encoding/json"
-	"fmt"
+	"bytes"
 	"strings"
 
 	b "ticketservice/internal/bigqueryfunctions"
@@ -35,16 +34,16 @@ func (s *SlackTicketService) CreateTicket(ticket *t.Ticket, row t.Recommendation
 }
 
 func (s *SlackTicketService) UpdateTicket(ticket *t.Ticket, row t.RecommendationQueryResult) error {
-	jsonData, err := json.MarshalIndent(ticket, "", "    ")
-	if err != nil {
-		return err
-	}
-	//Convert to code block
-	message := fmt.Sprintf("```%s```\n Cost Savings:%v in %v \n Description: %v", 
-		string(jsonData),
-		row.Impact_cost_unit,
-		row.Impact_currency_code,
-		row.Description)
+	// Prepare a buffer to hold the executed template
+    var tpl bytes.Buffer
+
+    // Execute the stored template with the row and ticket data
+    err := s.updateTemplate.Execute(&tpl, map[string]interface{}{"Row": row, "Ticket": ticket})
+    if err != nil {
+        return err
+    }
+	message := tpl.String()
+
 	if !s.channelAsTicket {
 		// This will return an array. [0] will be channel id [1] will be timestamp
 		channelTimestamp := strings.Split(ticket.IssueKey, "-")

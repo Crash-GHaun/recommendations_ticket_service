@@ -15,6 +15,7 @@
 package main
 
 import (
+	"bytes"
 	"crypto/hmac"
 	"crypto/sha256"
 	"encoding/hex"
@@ -114,7 +115,15 @@ func (s *SlackTicketService) createChannelAsTicket(ticket *t.Ticket, row t.Recom
 				row.TargetResource[secondToLast+1:],
 				""))
 	ticket.RecommenderID = row.Recommender_name
-	channelName := fmt.Sprintf("rec-%s-%s",ticket.TargetContact,ticket.Subject)
+	
+	// Create Ticket Title
+	var titleBuffer bytes.Buffer
+	err := s.titleTemplate.Execute(&titleBuffer, map[string]interface{}{"Row": row, "Ticket": ticket})
+	if err != nil {
+		u.LogPrint(3,"Error Executing Channel Name Template")
+		return "", err
+	}
+	channelName := titleBuffer.String()
 	channelName = strings.ReplaceAll(channelName, " ", "")
 	// According to this document the string length can be a max of 80
 	// https://api.slack.com/methods/conversations.create

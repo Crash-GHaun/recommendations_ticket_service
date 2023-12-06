@@ -1,0 +1,8 @@
+{{/* 
+    This template is used to generate ticket titles for optimization opportunities.
+    The data is populated from structs defined in internal/ticketInterfaces/baseTicketInterface.go.
+    Each placeholder, like {{.Row.Project_name}}, corresponds to a field in the RecommendationQueryResult struct.
+    Please ensure that the field names in the template match exactly with those in the struct.
+*/}}
+
+rec-{{.ticket.TargetContact}}-{{.ticket.Subject}}

@@ -20,6 +20,7 @@ import (
 	"regexp"
 	"strconv"
 	"sync"
+	"text/template"
 
 	"github.com/slack-go/slack"
 	
@@ -36,6 +37,8 @@ type SlackTicketService struct {
 	channelAsTicket bool
 	channelCache map[string]slack.Channel
 	cacheMutex sync.Mutex
+	titleTemplate *template.Template
+	updateTemplate *template.Template
 }
 
 func CreateService() t.BaseTicketService{
@@ -74,6 +77,17 @@ func (s *SlackTicketService) Init() error {
 		}
 	}
 	s.channelAsTicket = defaultValue
+	u.LogPrint(1, "Loading Title Template")
+	s.titleTemplate, err = template.ParseFiles("ticketTitleTpl.txt")
+	if err != nil {
+        u.LogPrint(4, "Error loading title template: %s", err)
+    }
+	u.LogPrint(1, "Loading Message Template")
+	// An argument could be made for making this an ENV. I'm flexible
+	s.updateTemplate, err = template.ParseFiles("updateTicketTpl.txt")
+    if err != nil {
+        u.LogPrint(4, "Error loading update template: %s", err)
+    }
 	u.LogPrint(1,"CHANNEL_AS_TICKET is set to "+strconv.FormatBool(s.channelAsTicket))
 	u.LogPrint(1, "Creating Channel Cache")
 	s.channelCache = make(map[string]slack.Channel)

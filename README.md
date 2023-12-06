@@ -68,6 +68,34 @@ Configuration is handled through environment variables. The list of required and
 
 Please note that the environment variables needs to be set before starting the service.
 
+## Template-Based Messaging
+
+This service now uses Go templates for generating ticket messages and titles. Templates are loaded from files and filled in with data from the `RecommendationQueryResult` and `Ticket` structs.
+
+### Template Files
+
+Two template files are used:
+
+1. `messageTemplate.txt` - For the body of the ticket message.
+2. `ticketTitleTemplate.txt` - For the ticket title.
+
+These templates use placeholders like `{{.Row.Project_name}}` to insert specific fields from the structs. The templates are loaded and parsed during the service initialization and are stored in memory for efficient reuse.
+
+### Usage
+
+To use these templates, simply execute them with the corresponding data structures:
+
+- `messageTemplate.Execute(&buffer, data)`
+- `ticketTitleTemplate.Execute(&buffer, data)`
+
+### Struct Location
+
+The structs used in these templates (`RecommendationQueryResult` and `Ticket`) are defined in `internal/ticketInterfaces/baseTicketInterface.go`.
+
+### Modifying Templates
+
+To modify the behavior of message or title generation, edit the respective template files. This approach allows for easy changes without modifying the core service code.
+
 ## Endpoints
 
 - `GET /CreateTickets`: Checks for new tickets, and Updates stale tickets.
