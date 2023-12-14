@@ -38,6 +38,8 @@ Before you start, you'll need to create a Slack App and give it the required per
    
    Note: The app may require additional permissions depending on further requirements.
 
+   ** Make sure you add your OAuth Token as `SLACK_API_TOKEN` Env variable **
+
 5. Navigate to 'Event Subscriptions' on the left-hand menu. Set it to 'On'. In the 'Request URL' field, you'll need to provide the public URL of the server where this service is running. Slack will send a verification request to this URL. If the service is running locally, consider using a service like ngrok to expose your local server.
 
    **Don't forget the endpoint should include /webhooks**

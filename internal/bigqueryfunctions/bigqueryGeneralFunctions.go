@@ -17,11 +17,13 @@ import (
 	"context"
 	"reflect"
 	"strings"
+	"time"
 
 	u "ticketservice/internal/utils"
 
 	"cloud.google.com/go/bigquery"
 	"google.golang.org/api/iterator"
+	"google.golang.org/protobuf/types/known/timestamppb"
 )
 
 var (
@@ -105,7 +107,16 @@ func QueryBigQueryToStruct(query string, t reflect.Type) ([]interface{}, error) 
 			u.LogPrint(3, "Failed to Extract Query Result: %v", err)
 			return nil, err
 		}
-
+		// Perform conversion for *timestamppb.Timestamp fields, if necessary
+		for i := 0; i < row.Elem().NumField(); i++ {
+			field := row.Elem().Field(i)
+			if field.Type() == reflect.TypeOf(&timestamppb.Timestamp{}) {
+				// Assuming the BigQuery field is time.Time
+				if bqTime, ok := field.Interface().(time.Time); ok {
+					field.Set(reflect.ValueOf(timestamppb.New(bqTime)))
+				}
+			}
+		}
 		// Append the row to the results slice
 		results = reflect.Append(results, row.Elem())
 	}
