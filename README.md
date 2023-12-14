@@ -41,6 +41,11 @@ go run compilePlugins.go
 go run main.go ticketService.go
 ```
 
+If you modify the protos you will need to run:
+```
+protoc --go_out=../ --go_opt=paths=source_relative *.proto
+```
+
 ## Configuration
 
 Configuration is handled through environment variables. The list of required and optional environment variables are:

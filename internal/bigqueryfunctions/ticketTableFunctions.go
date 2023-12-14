@@ -21,7 +21,19 @@ import (
 	u "ticketservice/internal/utils"
 	"time"
 	"reflect"
+	"cloud.google.com/go/bigquery/storage/managedwriter"
+	"cloud.google.com/go/bigquery/storage/managedwriter/adapt"
 	"cloud.google.com/go/bigquery"
+	storagepb "google.golang.org/genproto/googleapis/cloud/bigquery/storage/v1"
+	"google.golang.org/protobuf/proto"
+)
+
+var (
+	WithDestinationTable = managedwriter.WithDestinationTable
+    WithType = managedwriter.WithType
+	WithSchemaDescriptor = managedwriter.WithSchemaDescriptor
+	WithOffset = managedwriter.WithOffset
+
 )
 
 var ticketSchema = bigquery.Schema{
@@ -85,24 +97,71 @@ func CreateOrUpdateTicketTable(tableID string) error {
 
 // AppendTicketsToTable appends the provided tickets to a table in a BigQuery dataset.
 // If the table does not exist, an error is returned.
+// This function has been updated to use the new BQ Storage Write API
 func AppendTicketsToTable(tableID string, tickets []t.Ticket) error {
-	// Get a reference to the target table.
-	tableRef := client.Dataset(datasetID).Table(tableID)
-
-	// Check if the target table exists.
-	_, err := tableRef.Metadata(ctx)
+	// Create a ManagedWriter client
+	client, err := managedwriter.NewClient(ctx, projectID)
 	if err != nil {
-		return err
+		return fmt.Errorf("managedwriter.NewClient: %v", err)
+	}
+	
+	// Define protocol buffer schema
+	m := &t.Ticket{}
+	descriptorProto, err := adapt.NormalizeDescriptor(m.ProtoReflect().Descriptor())
+	if err != nil {
+		return fmt.Errorf("error getting descriptor proto: %v", err)
 	}
 
-	// Create a new inserter for the target table.
-	inserter := tableRef.Inserter()
-
-	// Append the provided rows to the target table.
-	if err := inserter.Put(ctx, tickets); err != nil {
-		return err
+	// Create a ManagedStream using pending stream
+	tableName := fmt.Sprintf("projects/%s/datasets/%s/tables/%s", projectID, datasetID, tableID)
+	managedStream, err := client.NewManagedStream(ctx,
+		WithDestinationTable(tableName),
+		WithType(managedwriter.PendingStream),
+		WithSchemaDescriptor(descriptorProto))
+	defer managedStream.Close()
+	if err != nil {
+		return fmt.Errorf("error created managed stream: %v", err)
 	}
-	u.LogPrint(1,"Inserted %d rows into BigQuery", len(tickets))
+
+	// Encode the tickets into binary
+	encoded := make([][]byte, len(tickets))
+	for k, ticket := range tickets {
+		b, err := proto.Marshal(&ticket)
+		if err != nil {
+			return fmt.Errorf("error marshalling ticket: %v", err)
+		}
+		encoded[k] = b
+	}
+
+	// Send the rows to the service, and specify an offset for managing deduplication.
+	result, err := managedStream.AppendRows(ctx, encoded, WithOffset(0))
+	if err != nil {
+		return fmt.Errorf("error appending rows: %v", err)
+	}
+
+	// Block until the write is complete and return the result.
+	_ , err = result.GetResult(ctx)
+	if err != nil {
+		return fmt.Errorf("error getting result: %v", err)
+	}
+
+	// First, finalize the stream we're writing into.
+	totalRows, err := managedStream.Finalize(ctx)
+	if err != nil {
+		return fmt.Errorf("error finalizing stream: %v", err)
+	}
+
+	req := &storagepb.BatchCommitWriteStreamsRequest{
+		Parent: managedwriter.TableParentFromStreamName(managedStream.StreamName()),
+		WriteStreams: []string{managedStream.StreamName()},
+	}
+	// Using the client, we can commit data from multple streams to the same
+	// table atomically.
+	_ , err = client.BatchCommitWriteStreams(ctx, req)
+	if err != nil {
+		return fmt.Errorf("error committing write streams: %v", err)
+	}
+	u.LogPrint(1,"Inserted %d rows into BigQuery", totalRows)
 	return nil
 }
 

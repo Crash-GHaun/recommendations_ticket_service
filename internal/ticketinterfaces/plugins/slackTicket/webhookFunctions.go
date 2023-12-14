@@ -22,6 +22,7 @@ import (
 	"time"
 
 	"github.com/slack-go/slack/slackevents"
+	"google.golang.org/protobuf/types/known/timestamppb"
 
 	b "ticketservice/internal/bigqueryfunctions"
 	u "ticketservice/internal/utils"
@@ -90,7 +91,7 @@ func snoozeFunction(s *SlackTicketService, event *slackevents.MessageEvent, spli
 	if err != nil {
 		return s.sendSlackMessage(event.Channel, event.ThreadTimeStamp, "Something went wrong getting ticket")
 	}
-	ticket.SnoozeDate = time.Now().Add(duration)
+	ticket.SnoozeDate = timestamppb.New(time.Now().Add(duration))
 	if err := b.UpsertTicket("", ticket); err != nil {
 		u.LogPrint(3, "[SLACK] Something went wrong updating ticket in BQ: %v", err)
 		return s.sendSlackMessage(event.Channel, event.ThreadTimeStamp, "Something went wrong")

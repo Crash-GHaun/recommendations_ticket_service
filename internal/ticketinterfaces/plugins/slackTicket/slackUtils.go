@@ -27,6 +27,7 @@ import (
 	"time"
 
 	"github.com/slack-go/slack"
+	"google.golang.org/protobuf/types/known/timestamppb"
 
 	b "ticketservice/internal/bigqueryfunctions"
 	t "ticketservice/internal/ticketinterfaces"
@@ -104,17 +105,18 @@ func (s *SlackTicketService) createNewChannel(channelName string) (*slack.Channe
 func (s *SlackTicketService) createChannelAsTicket(ticket *t.Ticket, row t.RecommendationQueryResult) (string, error) {
 	lastSlashIndex := strings.LastIndex(row.TargetResource, "/")
 	secondToLast := strings.LastIndex(row.TargetResource[:lastSlashIndex], "/")
+	now := timestamppb.New(time.Now())
 	// This could be moved to BQ Query. But ehh
-	ticket.CreationDate = time.Now()
-	ticket.LastUpdateDate = time.Now()
-	ticket.LastPingDate = time.Now()
-	ticket.SnoozeDate = time.Now().AddDate(0,0,7)
+	ticket.CreationDate = now
+	ticket.LastUpdateDate = now
+	ticket.LastPingDate = now
+	ticket.SnoozeDate = timestamppb.New(time.Now().AddDate(0,0,7))
 	ticket.Subject = fmt.Sprintf("%s-%s",
-			row.Recommender_subtype,
+			row.RecommenderSubtype,
 			nonAlphanumericRegex.ReplaceAllString(
 				row.TargetResource[secondToLast+1:],
 				""))
-	ticket.RecommenderID = row.Recommender_name
+	ticket.RecommenderId = row.RecommenderName
 	
 	// Create Ticket Title
 	var titleBuffer bytes.Buffer
@@ -159,20 +161,21 @@ func (s *SlackTicketService) createChannelAsTicket(ticket *t.Ticket, row t.Recom
 
 func (s *SlackTicketService) createThreadAsTicket(ticket *t.Ticket, row t.RecommendationQueryResult) (string, error) {
 	u.LogPrint(1, "Creating Thread As Ticket")
-	lastSlashIndex := strings.LastIndex(row.TargetResource, "/")
-	secondToLast := strings.LastIndex(row.TargetResource[:lastSlashIndex], "/")
-	// This could be moved to BQ Query. But ehh
-	ticket.CreationDate = time.Now()
-	ticket.LastUpdateDate = time.Now()
-	ticket.LastPingDate = time.Now()
-	ticket.SnoozeDate = time.Now().AddDate(0,0,7)
-	ticket.Subject = fmt.Sprintf("%s-%s-%s",
-			row.Project_name,
-			nonAlphanumericRegex.ReplaceAllString(
-				row.TargetResource[secondToLast+1:],
-				""),
-			row.Recommender_subtype)
-	ticket.RecommenderID = row.Recommender_name
+	now := timestamppb.New(time.Now())
+	ticket.CreationDate = now
+	ticket.LastUpdateDate = now
+	ticket.LastPingDate = now
+	ticket.SnoozeDate = timestamppb.New(time.Now().AddDate(0,0,7))
+	// Create Ticket Title
+	var titleBuffer bytes.Buffer
+	err := s.titleTemplate.Execute(&titleBuffer, map[string]interface{}{"Row": row, "Ticket": ticket})
+	if err != nil {
+		u.LogPrint(3,"Error Executing Title Name Template")
+		return "", err
+	}
+	// Set Ticket Title / Subject
+	ticket.Subject = titleBuffer.String()
+	ticket.RecommenderId = row.RecommenderName
 	channelName := strings.ToLower(ticket.TargetContact)
 
 	// Replace multiple characters using regex to conform to Slack channel name restrictions

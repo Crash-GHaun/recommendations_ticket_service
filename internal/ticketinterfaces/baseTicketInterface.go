@@ -15,7 +15,6 @@
 package ticketinterfaces
 
 import (
-	"time"
 	"plugin"
 	"github.com/labstack/echo/v4"
 	
@@ -34,35 +33,6 @@ type BaseTicketService interface {
 	CloseTicket(issueKey string) error
 	GetTicket(issueKey string) (Ticket, error)
 	HandleWebhookAction(echo.Context) error
-}
-
-// Ticket represents a support ticket.
-type Ticket struct {
-	IssueKey        string    `json:"issueKey"`
-	TargetContact	string	  `json:"targetContact"`
-	CreationDate    time.Time `json:"creationDate"`
-	Status          string    `json:"status"`
-	TargetResource  string    `json:"targetResource"`
-	RecommenderID  string  `json:"recommenderIds"`
-	LastUpdateDate time.Time `json:"lastUpdateDate"`
-	LastPingDate    time.Time `json:"lastPingDate"`
-	SnoozeDate      time.Time `json:"snoozeDate"`
-	Subject         string    `json:"subject"`
-	Assignee        []string    `json:"assignee"`
-}
-
-
-type RecommendationQueryResult struct {
-	Project_name	string	
-	Project_id	string
-	Recommender_name	string
-	Location	string
-	Recommender_subtype	string
-	Impact_cost_unit	int
-	Impact_currency_code	string
-	TargetResource	string
-	Description	string
-	Ticket	Ticket
 }
 
 func InitTicketService(implName string) (BaseTicketService, error) {

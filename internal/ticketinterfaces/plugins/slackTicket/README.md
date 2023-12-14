@@ -44,7 +44,6 @@ Before you start, you'll need to create a Slack App and give it the required per
 
 6. Under 'Subscribe to Bot Events', click 'Add Bot User Event' and add the events you want your bot to listen to. 
      - `message.channels` - for messages in public channels.
-     - `message.replies` - for messages that are replies in a thread.
 
 7. Go back to 'OAuth & Permissions', click 'Install App to Workspace'. Authorize the app in your workspace, after which you'll be provided with a 'Bot User OAuth Token'. Set this as your environment variable `SLACK_API_TOKEN`.
 
