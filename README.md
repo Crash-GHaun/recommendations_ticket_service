@@ -38,7 +38,7 @@ go run compilePlugins.go
 
 - To start the service locally, run the following command
 ```
-go run main.go ticketService.go
+go run main.go ticketLogic.go
 ```
 
 If you modify the protos you will need to run:

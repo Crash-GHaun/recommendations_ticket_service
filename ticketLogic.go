@@ -23,6 +23,9 @@ import (
 	u "ticketservice/internal/utils"
 	"time"
 
+	
+	"google.golang.org/protobuf/types/known/timestamppb"
+
 )
 
 
@@ -47,7 +50,7 @@ func checkAndCreateNewTickets() error {
 		u.LogPrint(4,"Failed to query bigquery for new tickets")
 		return err
 	}
-	var rowsToInsert []ticketinterfaces.Ticket
+	var rowsToInsert []*ticketinterfaces.Ticket
 	var rowsMutex sync.Mutex
 	var wg sync.WaitGroup
 	wg.Add(len(results))
@@ -62,15 +65,15 @@ func checkAndCreateNewTickets() error {
 			// Logic for if the ticket is already created
 			if ticket.IssueKey != ""{
 				u.LogPrint(3,"Already Exists: " + ticket.IssueKey)
-				ticket.RecommenderID = row.Recommender_name
-				ticket.SnoozeDate = time.Now().AddDate(0,0,7)
+				ticket.RecommenderId = row.RecommenderName
+				ticket.SnoozeDate = timestamppb.New(time.Now().AddDate(0,0,7))
 				rowsMutex.Lock()
 				rowsToInsert = append(rowsToInsert, ticket)
 				rowsMutex.Unlock()
 				return nil
 			}
 			u.LogPrint(1, "Retrieving Routing Information")
-			routingRows, err := b.GetRoutingRowsByProjectID(c.BqRoutingTable,row.Project_id)
+			routingRows, err := b.GetRoutingRowsByProjectID(c.BqRoutingTable,row.ProjectId)
 			if err != nil {
 				u.LogPrint(3,"Failed to get routing information")
 				return err
@@ -84,7 +87,7 @@ func checkAndCreateNewTickets() error {
 			ticket.Assignee = routingRows[0].TicketSystemIdentifiers
 			u.LogPrint(1,"Creating new Ticket")
 			// I need a way to catch IF a ticket is already created
-			ticketID, err := ticketService.CreateTicket(&ticket, row)
+			ticketID, err := ticketService.CreateTicket(ticket, row)
 			if err != nil {
 				return err
 			}

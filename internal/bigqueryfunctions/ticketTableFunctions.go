@@ -98,7 +98,7 @@ func CreateOrUpdateTicketTable(tableID string) error {
 // AppendTicketsToTable appends the provided tickets to a table in a BigQuery dataset.
 // If the table does not exist, an error is returned.
 // This function has been updated to use the new BQ Storage Write API
-func AppendTicketsToTable(tableID string, tickets []t.Ticket) error {
+func AppendTicketsToTable(tableID string, tickets []*t.Ticket) error {
 	// Create a ManagedWriter client
 	client, err := managedwriter.NewClient(ctx, projectID)
 	if err != nil {
@@ -126,7 +126,7 @@ func AppendTicketsToTable(tableID string, tickets []t.Ticket) error {
 	// Encode the tickets into binary
 	encoded := make([][]byte, len(tickets))
 	for k, ticket := range tickets {
-		b, err := proto.Marshal(&ticket)
+		b, err := proto.Marshal(ticket)
 		if err != nil {
 			return fmt.Errorf("error marshalling ticket: %v", err)
 		}
