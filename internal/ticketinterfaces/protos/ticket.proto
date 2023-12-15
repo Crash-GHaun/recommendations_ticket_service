@@ -1,18 +1,17 @@
 syntax = "proto3";
 
-import "google/protobuf/timestamp.proto";
 option go_package = "./ticketinterfaces";
 
 message Ticket {
   string issue_key = 1 [json_name="issueKey"];
   string target_contact = 2 [json_name="targetContact"];
-  google.protobuf.Timestamp creation_date = 3 [json_name="creationDate"];
+  string creation_date = 3 [json_name="creationDate"];
   string status = 4 [json_name="status"];
   string target_resource = 5 [json_name="targetResource"];
   string recommender_id = 6 [json_name="recommenderIds"];
-  google.protobuf.Timestamp last_update_date = 7 [json_name="lastUpdateDate"];
-  google.protobuf.Timestamp last_ping_date = 8 [json_name="lastPingDate"];
-  google.protobuf.Timestamp snooze_date = 9 [json_name="snoozeDate"];
+  string last_update_date = 7 [json_name="lastUpdateDate"];
+  string last_ping_date = 8 [json_name="lastPingDate"];
+  string snooze_date = 9 [json_name="snoozeDate"];
   string subject = 10 [json_name="subject"];
   repeated string assignee = 11 [json_name="assignee"];
 }

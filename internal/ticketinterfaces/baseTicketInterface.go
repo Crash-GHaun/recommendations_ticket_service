@@ -66,34 +66,36 @@ func InitTicketService(implName string) (BaseTicketService, error) {
 // %[2] is the ticket table
 // %[3] is the Cost Threshold
 // %[4] is an additional string added to allow null values
-// TODO: (GHAUN) reduce the number of returned fields
-var CheckQueryTpl = `SELECT f.* EXCEPT(
-	recommender_last_refresh_time,
-	has_impact_cost,
-	recommender_state,
-	folder_ids,
-	insights,
-	insight_ids,
-	target_resources),
-	TargetResource,
-	struct(
-			IFNULL(t.IssueKey, "") as IssueKey,
-			IFNULL(t.TargetContact, "") as TargetContact,
-			IFNULL(t.CreationDate, TIMESTAMP '1970-01-01T00:00:00Z') as CreationDate,
-			IFNULL(t.Status, "") as Status,
-			IFNULL(t.TargetResource, "") as TargetResource,
-			IFNULL(t.RecommenderID, "") as RecommenderID,
-			IFNULL(t.LastUpdateDate, TIMESTAMP '1970-01-01T00:00:00Z') as LastUpdateDate,
-			IFNULL(t.LastPingDate, TIMESTAMP '1970-01-01T00:00:00Z') as LastPingDate,
-			IFNULL(t.SnoozeDate, TIMESTAMP '1970-01-01T00:00:00Z') as SnoozeDate,
-			IFNULL(t.Subject, "") as Subject,
-			t.Assignee
-			) as Ticket
-	FROM %[1]s as f 
-	cross join unnest(target_resources) as TargetResource 
-	Left Join %[2]s as t 
-	on TargetResource=t.TargetResource 
-	where (t.IssueKey IS NULL or CURRENT_TIMESTAMP() >= SnoozeDate) and
-	(impact_cost_unit >= %[3]d %[4]s) 
-	and recommender_subtype not in (%[5]s)
-	limit %[6]d` // This is temporary.
+// %[5] is a subtype filter
+// %[6] is the limit of rows
+var CheckQueryTpl = `SELECT
+  f.* EXCEPT (
+    recommender_last_refresh_time,
+    has_impact_cost,
+    recommender_state,
+    folder_ids,
+    insights,
+    insight_ids,
+    target_resources
+  ),
+  TargetResource,
+  STRUCT(
+    IFNULL(t.IssueKey, "") AS IssueKey,
+    IFNULL(t.TargetContact, "") AS TargetContact,
+    FORMAT_TIMESTAMP('%%FT%%T%%z', IFNULL(t.CreationDate, TIMESTAMP '1970-01-01T00:00:00Z')) AS CreationDate,
+    IFNULL(t.Status, "") AS Status,
+    IFNULL(t.TargetResource, "") AS TargetResource,
+    IFNULL(t.RecommenderID, "") AS RecommenderID,
+    FORMAT_TIMESTAMP('%%FT%%T%%z', IFNULL(t.LastUpdateDate, TIMESTAMP '1970-01-01T00:00:00Z')) AS LastUpdateDate,
+    FORMAT_TIMESTAMP('%%FT%%T%%z', IFNULL(t.LastPingDate, TIMESTAMP '1970-01-01T00:00:00Z')) AS LastPingDate,
+    FORMAT_TIMESTAMP('%%FT%%T%%z', IFNULL(t.SnoozeDate, TIMESTAMP '1970-01-01T00:00:00Z')) AS SnoozeDate,
+    IFNULL(t.Subject, "") AS Subject,
+    t.Assignee
+  ) AS Ticket
+FROM %[1]s AS f
+CROSS JOIN UNNEST(target_resources) AS TargetResource
+LEFT JOIN %[2]s AS t ON TargetResource = t.TargetResource
+WHERE (t.IssueKey IS NULL OR CURRENT_TIMESTAMP() >= SnoozeDate)
+  AND (impact_cost_unit >= %[3]d %[4]s)
+  AND recommender_subtype NOT IN (%[5]s)
+LIMIT %[6]d`

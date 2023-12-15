@@ -23,9 +23,6 @@ import (
 	u "ticketservice/internal/utils"
 	"time"
 
-	
-	"google.golang.org/protobuf/types/known/timestamppb"
-
 )
 
 
@@ -66,7 +63,7 @@ func checkAndCreateNewTickets() error {
 			if ticket.IssueKey != ""{
 				u.LogPrint(3,"Already Exists: " + ticket.IssueKey)
 				ticket.RecommenderId = row.RecommenderName
-				ticket.SnoozeDate = timestamppb.New(time.Now().AddDate(0,0,7))
+				ticket.SnoozeDate = time.Now().AddDate(0,0,7).Format(time.RFC3339)
 				rowsMutex.Lock()
 				rowsToInsert = append(rowsToInsert, ticket)
 				rowsMutex.Unlock()

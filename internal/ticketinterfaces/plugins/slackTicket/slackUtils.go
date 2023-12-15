@@ -27,7 +27,6 @@ import (
 	"time"
 
 	"github.com/slack-go/slack"
-	"google.golang.org/protobuf/types/known/timestamppb"
 
 	b "ticketservice/internal/bigqueryfunctions"
 	t "ticketservice/internal/ticketinterfaces"
@@ -105,12 +104,12 @@ func (s *SlackTicketService) createNewChannel(channelName string) (*slack.Channe
 func (s *SlackTicketService) createChannelAsTicket(ticket *t.Ticket, row t.RecommendationQueryResult) (string, error) {
 	lastSlashIndex := strings.LastIndex(row.TargetResource, "/")
 	secondToLast := strings.LastIndex(row.TargetResource[:lastSlashIndex], "/")
-	now := timestamppb.New(time.Now())
+	now := time.Now().Format(time.RFC3339)
 	// This could be moved to BQ Query. But ehh
 	ticket.CreationDate = now
 	ticket.LastUpdateDate = now
 	ticket.LastPingDate = now
-	ticket.SnoozeDate = timestamppb.New(time.Now().AddDate(0,0,7))
+	ticket.SnoozeDate = time.Now().AddDate(0,0,7).Format(time.RFC3339)
 	ticket.Subject = fmt.Sprintf("%s-%s",
 			row.RecommenderSubtype,
 			nonAlphanumericRegex.ReplaceAllString(
@@ -161,11 +160,11 @@ func (s *SlackTicketService) createChannelAsTicket(ticket *t.Ticket, row t.Recom
 
 func (s *SlackTicketService) createThreadAsTicket(ticket *t.Ticket, row t.RecommendationQueryResult) (string, error) {
 	u.LogPrint(1, "Creating Thread As Ticket")
-	now := timestamppb.New(time.Now())
+	now := time.Now().Format(time.RFC3339)
 	ticket.CreationDate = now
 	ticket.LastUpdateDate = now
 	ticket.LastPingDate = now
-	ticket.SnoozeDate = timestamppb.New(time.Now().AddDate(0,0,7))
+	ticket.SnoozeDate = time.Now().AddDate(0,0,7).Format(time.RFC3339)
 	// Create Ticket Title
 	var titleBuffer bytes.Buffer
 	err := s.titleTemplate.Execute(&titleBuffer, map[string]interface{}{"Row": row, "Ticket": ticket})
