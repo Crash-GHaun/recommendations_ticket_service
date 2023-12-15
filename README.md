@@ -164,6 +164,21 @@ The `TicketSystemIdentifiers` is a repeated string field that directly correspon
 
 For instance, in Slack, identifiers are not usernames or emails, but unique strings like `U03CS3FK54Z`. Therefore, this field should be configured based on the specifics of your ticketing system.
 
+### Quick Population:
+
+I'm not recommending this for production, but if you are just testing you can use the following query to help populate the table for testing:
+```
+truncate table `your_dataset.recommender_routing_table`;
+INSERT INTO `your_dataset.recommender_routing_table` (Target, ProjectID, TicketSystemIdentifiers)
+SELECT 'TicketTestChannel' AS Target, project_id AS ProjectID, ['TicketSystemIdentifier'] AS TicketSystemIdentifiers
+FROM (SELECT DISTINCT project_id FROM `your_dataset.flattened_recommendations`);
+INSERT INTO `your_dataset.recommender_routing_table` (Target, ProjectID, TicketSystemIdentifiers)
+SELECT 'TicketTestChannel' AS Target, NULL AS ProjectID, ['TicketSystemIdentifier'] AS TicketSystemIdentifiers
+UNION ALL
+SELECT 'TicketTestChannel' AS Target, "" AS ProjectID, ['TicketSystemIdentifier'] AS TicketSystemIdentifiers;
+
+```
+
 ## License
 
 This project is licensed under the Apache License - see the [LICENSE.md](LICENSE.md) file for details

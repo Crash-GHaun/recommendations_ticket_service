@@ -86,6 +86,7 @@ func checkAndCreateNewTickets() error {
 			// I need a way to catch IF a ticket is already created
 			ticketID, err := ticketService.CreateTicket(ticket, row)
 			if err != nil {
+				u.LogPrint(3, "Failed to create new ticket: %v", err)
 				return err
 			}
 			ticket.IssueKey = ticketID
