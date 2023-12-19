@@ -69,15 +69,14 @@ func InitTicketService(implName string) (BaseTicketService, error) {
 // %[5] is a subtype filter
 // %[6] is the limit of rows
 var CheckQueryTpl = `SELECT
-  f.* EXCEPT (
-    recommender_last_refresh_time,
-    has_impact_cost,
-    recommender_state,
-    folder_ids,
-    insights,
-    insight_ids,
-    target_resources
-  ),
+  IFNULL(f.project_name, "") as ProjectName,
+  IFNULL(f.project_id, "") as ProjectID,
+  f.recommender_name as RecommenderName,
+  f.location as Location,
+  f.recommender_subtype as RecommenderSubtype,
+  f.impact_cost_unit as ImpactCostUnit,
+  f.impact_currency_code as ImpactCurrencyCode,
+  f.description as Description,
   TargetResource,
   STRUCT(
     IFNULL(t.IssueKey, "") AS IssueKey,

@@ -1,0 +1,17 @@
+syntax = "proto3";
+option go_package = "./ticketinterfaces";
+
+import "ticket.proto";
+
+message RecommendationQueryResult {
+  string project_name = 1;
+  string project_id = 2;
+  string recommender_name = 3;
+  string location = 4;
+  string recommender_subtype = 5;
+  int32 impact_cost_unit = 6;
+  string impact_currency_code = 7;
+  string target_resource = 8;
+  string description = 9;
+  Ticket ticket = 10;
+}

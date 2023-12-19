@@ -62,7 +62,7 @@ func checkAndCreateNewTickets() error {
 			// Logic for if the ticket is already created
 			if ticket.IssueKey != ""{
 				u.LogPrint(3,"Already Exists: " + ticket.IssueKey)
-				ticket.RecommenderId = row.RecommenderName
+				ticket.RecommenderID = row.RecommenderName
 				ticket.SnoozeDate = time.Now().AddDate(0,0,7).Format(time.RFC3339)
 				rowsMutex.Lock()
 				rowsToInsert = append(rowsToInsert, ticket)
@@ -80,10 +80,12 @@ func checkAndCreateNewTickets() error {
 				u.LogPrint(3, "No routing rows found for the given project ID: %v", row.ProjectId)
 				return fmt.Errorf("No routing rows found for the given project ID")
 			}
+			ticket.Status = "New"
+			ticket.TargetResource = row.TargetResource
+			ticket.RecommenderID = row.RecommenderName
 			ticket.TargetContact = routingRows[0].Target
 			ticket.Assignee = routingRows[0].TicketSystemIdentifiers
 			u.LogPrint(1,"Creating new Ticket")
-			// I need a way to catch IF a ticket is already created
 			ticketID, err := ticketService.CreateTicket(ticket, row)
 			if err != nil {
 				u.LogPrint(3, "Failed to create new ticket: %v", err)

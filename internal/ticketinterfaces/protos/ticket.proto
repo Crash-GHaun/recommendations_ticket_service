@@ -3,28 +3,16 @@ syntax = "proto3";
 option go_package = "./ticketinterfaces";
 
 message Ticket {
-  string issue_key = 1 [json_name="issueKey"];
-  string target_contact = 2 [json_name="targetContact"];
-  string creation_date = 3 [json_name="creationDate"];
-  string status = 4 [json_name="status"];
-  string target_resource = 5 [json_name="targetResource"];
-  string recommender_id = 6 [json_name="recommenderIds"];
-  string last_update_date = 7 [json_name="lastUpdateDate"];
-  string last_ping_date = 8 [json_name="lastPingDate"];
-  string snooze_date = 9 [json_name="snoozeDate"];
-  string subject = 10 [json_name="subject"];
-  repeated string assignee = 11 [json_name="assignee"];
+  string IssueKey = 1;
+  string TargetContact = 2;
+  string CreationDate = 3;
+  string Status = 4;
+  string TargetResource = 5;
+  string RecommenderID = 6;
+  string LastUpdateDate = 7;
+  string LastPingDate = 8;
+  string SnoozeDate = 9;
+  string Subject = 10;
+  repeated string Assignee = 11;
 }
 
-message RecommendationQueryResult {
-  string project_name = 1 [json_name="projectName"];
-  string project_id = 2 [json_name="projectId"];
-  string recommender_name = 3 [json_name="recommenderName"];
-  string location = 4 [json_name="location"];
-  string recommender_subtype = 5 [json_name="recommenderSubtype"];
-  int32 impact_cost_unit = 6 [json_name="impactCostUnit"];
-  string impact_currency_code = 7 [json_name="impactCurrencyCode"];
-  string target_resource = 8 [json_name="targetResource"];
-  string description = 9 [json_name="description"];
-  Ticket ticket = 10 [json_name="ticket"];
-}

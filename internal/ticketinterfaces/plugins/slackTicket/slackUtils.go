@@ -66,6 +66,8 @@ func (s *SlackTicketService) createNewChannel(channelName string) (*slack.Channe
 	// goroutines checking channels
 	// and if we create a channel, we don't want to try 
 	// creating multiple.
+	re := regexp.MustCompile(`[\s@#._/:\\*?"<>|]+`)
+	channelName = re.ReplaceAllString(channelName, "-")
 	s.cacheMutex.Lock()
 	defer s.cacheMutex.Unlock()
 	channel, exists := s.channelCache[channelName]
@@ -105,7 +107,6 @@ func (s *SlackTicketService) createChannelAsTicket(ticket *t.Ticket, row t.Recom
 	lastSlashIndex := strings.LastIndex(row.TargetResource, "/")
 	secondToLast := strings.LastIndex(row.TargetResource[:lastSlashIndex], "/")
 	now := time.Now().Format(time.RFC3339)
-	// This could be moved to BQ Query. But ehh
 	ticket.CreationDate = now
 	ticket.LastUpdateDate = now
 	ticket.LastPingDate = now
@@ -115,7 +116,7 @@ func (s *SlackTicketService) createChannelAsTicket(ticket *t.Ticket, row t.Recom
 			nonAlphanumericRegex.ReplaceAllString(
 				row.TargetResource[secondToLast+1:],
 				""))
-	ticket.RecommenderId = row.RecommenderName
+	ticket.RecommenderID = row.RecommenderName
 	
 	// Create Ticket Title
 	var titleBuffer bytes.Buffer
@@ -151,9 +152,12 @@ func (s *SlackTicketService) createChannelAsTicket(ticket *t.Ticket, row t.Recom
 		}
 		u.LogPrint(1,"User(s) were already in channel")
 	}
-
 	// Ping Channel with details of the Recommendation
-	s.UpdateTicket(ticket, row)
+	err = s.UpdateTicket(ticket, row)
+	if err != nil {
+		u.LogPrint(3, "Failed to Update Ticket")
+		return "", err
+	}
 	u.LogPrint(2,"Created Channel: "+channelName+"   with ID: "+channel.ID)
 	return channel.ID, nil
 }
@@ -174,7 +178,7 @@ func (s *SlackTicketService) createThreadAsTicket(ticket *t.Ticket, row t.Recomm
 	}
 	// Set Ticket Title / Subject
 	ticket.Subject = titleBuffer.String()
-	ticket.RecommenderId = row.RecommenderName
+	ticket.RecommenderID = row.RecommenderName
 	channelName := strings.ToLower(ticket.TargetContact)
 
 	// Replace multiple characters using regex to conform to Slack channel name restrictions
@@ -197,7 +201,7 @@ func (s *SlackTicketService) createThreadAsTicket(ticket *t.Ticket, row t.Recomm
 		}
 		u.LogPrint(1,"User(s) were already in channel")
 	}
-
+	u.LogPrint(1, "Sending Initial Message in thread")
 	// Send message to the created channel to create "ticket/thread"
 	messageOptions := slack.MsgOptionText(ticket.Subject, false)
 	_ ,timestamp, err := s.slackClient.PostMessage(channel.ID, messageOptions)
@@ -208,7 +212,11 @@ func (s *SlackTicketService) createThreadAsTicket(ticket *t.Ticket, row t.Recomm
 
 	ticket.IssueKey = channel.ID + "-" + timestamp
 
-	s.UpdateTicket(ticket, row)
+	err = s.UpdateTicket(ticket, row)
+	if err != nil {
+		u.LogPrint(3, "Failed to Update Ticket")
+		return "", err
+	}
 	u.LogPrint(1, "Created Ticket in Channel: "+channelName+" with ID: "+timestamp)
 	return ticket.IssueKey, nil
 }
@@ -216,7 +224,7 @@ func (s *SlackTicketService) createThreadAsTicket(ticket *t.Ticket, row t.Recomm
 // C = Channel, t = ThreadTimeStamp, m = message you want to send
 func (s *SlackTicketService) sendSlackMessage(c string, t string, m string) error{
 	// Send the message to the channel in which the event occurred
-	u.LogPrint(1, "Sending message to channel: %s, timestamp: %s, with message: %s", c,t,m)
+	//u.LogPrint(1, "Sending message to channel: %s, timestamp: %s, with message: %s", c,t,m)
 	message := slack.MsgOptionText(m, false)
 	if !s.channelAsTicket {
 		_, _, _, err := s.slackClient.SendMessage(c, slack.MsgOptionTS(t), message)

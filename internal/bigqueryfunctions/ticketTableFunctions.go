@@ -59,20 +59,6 @@ func createTicketTable(tableID string) error {
 	if err := createTable(tableID, ticketSchema); err != nil{
 		return err
 	}
-	// I couldn't find how to add this using GoLang library
-	// Assuming since it's pre-ga it doesn't have it. 
-	u.LogPrint(1,"Updating primary key")
-	var addPrimaryKeyQuery = fmt.Sprintf(
-		"ALTER TABLE `%s` ADD PRIMARY KEY (IssueKey) NOT ENFORCED",
-		datasetID+"."+tableID,
-	)
-	_, err := QueryBigQueryToMap(addPrimaryKeyQuery)
-	if err != nil {
-		if !strings.Contains(err.Error(),"Already Exists"){
-			return err
-		}
-	}
-
 	// If the table was created successfully, log a message and return nil.
 	u.LogPrint(1,"Table %s:%s.%s created successfully\n", client.Project(), datasetID, tableID)
 	return nil
@@ -104,6 +90,7 @@ func AppendTicketsToTable(tableID string, tickets []*t.Ticket) error {
 	if err != nil {
 		return fmt.Errorf("managedwriter.NewClient: %v", err)
 	}
+	defer client.Close()
 	
 	// Define protocol buffer schema
 	m := &t.Ticket{}
@@ -120,7 +107,7 @@ func AppendTicketsToTable(tableID string, tickets []*t.Ticket) error {
 		WithSchemaDescriptor(descriptorProto))
 	defer managedStream.Close()
 	if err != nil {
-		return fmt.Errorf("error created managed stream: %v", err)
+		return fmt.Errorf("error creating managed stream: %v", err)
 	}
 
 	// Encode the tickets into binary
