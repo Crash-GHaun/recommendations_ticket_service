@@ -127,6 +127,9 @@ func AppendTicketsToTable(tableID string, tickets []*t.Ticket) error {
 	// Block until the write is complete and return the result.
 	_ , err = result.GetResult(ctx)
 	if err != nil {
+		err1, err2 := result.FullResponse(ctx)
+		fmt.Printf("%+v\n", err1)
+		fmt.Printf("%+v\n", err2)
 		return fmt.Errorf("error getting result: %v", err)
 	}
 	u.LogPrint(1,"Inserted %d rows into BigQuery", len(tickets))
@@ -138,13 +141,13 @@ func GetTicketByIssueKey(issueKey string) (*t.Ticket, error) {
 	var GetTicketQuery = `SELECT 
 	IssueKey,
     TargetContact,
-    FORMAT_TIMESTAMP('%%FT%%T%%z', CreationDate) AS CreationDate,
+    FORMAT_TIMESTAMP('%%Y-%%m-%%d %%H:%%M:%%S', CreationDate) AS CreationDate,
     Status,
     TargetResource,
     RecommenderID,
-    FORMAT_TIMESTAMP('%%FT%%T%%z', LastUpdateDate) AS LastUpdateDate,
-    FORMAT_TIMESTAMP('%%FT%%T%%z', LastPingDate) AS LastPingDate,
-    FORMAT_TIMESTAMP('%%FT%%T%%z', SnoozeDate) AS SnoozeDate,
+    FORMAT_TIMESTAMP('%%Y-%%m-%%d %%H:%%M:%%S', LastUpdateDate) AS LastUpdateDate,
+    FORMAT_TIMESTAMP('%%Y-%%m-%%d %%H:%%M:%%S', LastPingDate) AS LastPingDate,
+    FORMAT_TIMESTAMP('%%Y-%%m-%%d %%H:%%M:%%S', SnoozeDate) AS SnoozeDate,
     Subject,
     Assignee
 	FROM %s.%s

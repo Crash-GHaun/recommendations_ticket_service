@@ -68,6 +68,8 @@ func InitTicketService(implName string) (BaseTicketService, error) {
 // %[4] is an additional string added to allow null values
 // %[5] is a subtype filter
 // %[6] is the limit of rows
+// The Format timestamp works here, but doesn't work in ticketTableFunctions? 
+// If it stops working here try changing to '%%Y-%%m-%%d %%H:%%M:%%S'
 var CheckQueryTpl = `SELECT
   IFNULL(f.project_name, "") as ProjectName,
   IFNULL(f.project_id, "") as ProjectID,

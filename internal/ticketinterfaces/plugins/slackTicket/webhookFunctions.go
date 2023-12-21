@@ -92,6 +92,7 @@ func snoozeFunction(s *SlackTicketService, event *slackevents.MessageEvent, spli
 		return s.sendSlackMessage(event.Channel, event.ThreadTimeStamp, "Something went wrong getting ticket")
 	}
 	ticket.SnoozeDate = time.Now().Add(duration).Format(time.RFC3339)
+	ticket.Status = "Snoozed"
 	if err := b.AppendTicketsToTable("", []*t.Ticket{&ticket}); err != nil {
 		u.LogPrint(3, "[SLACK] Something went wrong updating ticket in BQ: %v", err)
 		return s.sendSlackMessage(event.Channel, event.ThreadTimeStamp, "Something went wrong")
