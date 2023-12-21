@@ -93,7 +93,11 @@ var CheckQueryTpl = `SELECT
   ) AS Ticket
 FROM %[1]s AS f
 CROSS JOIN UNNEST(target_resources) AS TargetResource
-LEFT JOIN %[2]s AS t ON TargetResource = t.TargetResource
+LEFT JOIN (
+	SELECT *,
+		   ROW_NUMBER() OVER (PARTITION BY IssueKey ORDER BY LastUpdateDate DESC) as rn
+	FROM %[2]s
+  ) AS t ON TargetResource = t.TargetResource AND t.rn = 1
 WHERE (t.IssueKey IS NULL OR CURRENT_TIMESTAMP() >= SnoozeDate)
   AND (impact_cost_unit >= %[3]d %[4]s)
   AND recommender_subtype NOT IN (%[5]s)

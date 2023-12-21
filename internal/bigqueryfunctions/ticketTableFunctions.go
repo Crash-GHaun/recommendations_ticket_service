@@ -16,23 +16,18 @@ package bigqueryfunctions
 
 import (
 	"fmt"
-	"strings"
 	t "ticketservice/internal/ticketinterfaces"
 	u "ticketservice/internal/utils"
-	"time"
 	"reflect"
 	"cloud.google.com/go/bigquery/storage/managedwriter"
 	"cloud.google.com/go/bigquery/storage/managedwriter/adapt"
 	"cloud.google.com/go/bigquery"
-	storagepb "google.golang.org/genproto/googleapis/cloud/bigquery/storage/v1"
 	"google.golang.org/protobuf/proto"
 )
 
 var (
 	WithDestinationTable = managedwriter.WithDestinationTable
-    WithType = managedwriter.WithType
 	WithSchemaDescriptor = managedwriter.WithSchemaDescriptor
-	WithOffset = managedwriter.WithOffset
 
 )
 
@@ -85,6 +80,10 @@ func CreateOrUpdateTicketTable(tableID string) error {
 // If the table does not exist, an error is returned.
 // This function has been updated to use the new BQ Storage Write API
 func AppendTicketsToTable(tableID string, tickets []*t.Ticket) error {
+	// Get a reference to the target table.
+	if tableID == "" {
+		tableID = ticketTableID
+	}
 	// Create a ManagedWriter client
 	client, err := managedwriter.NewClient(ctx, projectID)
 	if err != nil {
@@ -103,7 +102,6 @@ func AppendTicketsToTable(tableID string, tickets []*t.Ticket) error {
 	tableName := fmt.Sprintf("projects/%s/datasets/%s/tables/%s", projectID, datasetID, tableID)
 	managedStream, err := client.NewManagedStream(ctx,
 		WithDestinationTable(tableName),
-		WithType(managedwriter.PendingStream),
 		WithSchemaDescriptor(descriptorProto))
 	defer managedStream.Close()
 	if err != nil {
@@ -121,7 +119,7 @@ func AppendTicketsToTable(tableID string, tickets []*t.Ticket) error {
 	}
 
 	// Send the rows to the service, and specify an offset for managing deduplication.
-	result, err := managedStream.AppendRows(ctx, encoded, WithOffset(0))
+	result, err := managedStream.AppendRows(ctx, encoded)
 	if err != nil {
 		return fmt.Errorf("error appending rows: %v", err)
 	}
@@ -131,85 +129,7 @@ func AppendTicketsToTable(tableID string, tickets []*t.Ticket) error {
 	if err != nil {
 		return fmt.Errorf("error getting result: %v", err)
 	}
-
-	// First, finalize the stream we're writing into.
-	totalRows, err := managedStream.Finalize(ctx)
-	if err != nil {
-		return fmt.Errorf("error finalizing stream: %v", err)
-	}
-
-	req := &storagepb.BatchCommitWriteStreamsRequest{
-		Parent: managedwriter.TableParentFromStreamName(managedStream.StreamName()),
-		WriteStreams: []string{managedStream.StreamName()},
-	}
-	// Using the client, we can commit data from multple streams to the same
-	// table atomically.
-	_ , err = client.BatchCommitWriteStreams(ctx, req)
-	if err != nil {
-		return fmt.Errorf("error committing write streams: %v", err)
-	}
-	u.LogPrint(1,"Inserted %d rows into BigQuery", totalRows)
-	return nil
-}
-
-// UpsertTicket inserts or updates a Ticket in a BigQuery table.
-// The table must have a schema that matches the Ticket struct.
-
-// This function is nuts, and probably way to complex for what it is.
-// However, all the documentation and code I tried to make "upserting" work
-// Using Primary Keys, etc in BQ have all failed. They all simply "appended" rows
-// When in doubt, just write SQL. So that's where we are :/ 
-func UpsertTicket(tableID string, ticket t.Ticket) error {
-	// Get a reference to the target table.
-	if tableID == "" {
-		tableID = ticketTableID
-	}
-	// Build the update query.
-	var updateStmts []string
-	v := reflect.ValueOf(ticket)
-	for i := 0; i < v.NumField(); i++ {
-		field := v.Type().Field(i)
-		fieldName := field.Name
-		fieldValue := v.Field(i).Interface()
-
-		// Convert the field value to a string representation
-		var strValue string
-		switch fieldValue := fieldValue.(type) {
-		case []string:
-			// Handle string arrays
-			var strValues []string
-			for _, val := range fieldValue {
-				strValues = append(strValues, fmt.Sprintf("'%s'", val))
-			}
-			strValue = fmt.Sprintf("[%s]", strings.Join(strValues, ", "))
-		case time.Time:
-			// Handle time values
-			strValue = "'" + fieldValue.Format("2006-01-02 15:04:05") + "'"
-		case string:
-			// Handle string values
-			strValue = "'" + fieldValue + "'"
-		default:
-			strValue = fmt.Sprintf("%v", fieldValue)
-		}
-
-		// Skip fields with nil or empty values
-		if fieldValue == nil || fieldValue == "" {
-			continue
-		}
-
-		updateStmt := fmt.Sprintf("%s = %s", fieldName, strValue)
-		updateStmts = append(updateStmts, updateStmt)
-	}
-	updateQuery := fmt.Sprintf("UPDATE `%s.%s` SET %s WHERE IssueKey = '%s'",
-		datasetID, tableID, strings.Join(updateStmts, ", "), ticket.IssueKey)
-
-	// Execute the update query.
-	_, err := runQuery(updateQuery)
-	if err != nil {
-		u.LogPrint(4, "Failed to update ticket: %v", err)
-		return err
-	}
-
+	u.LogPrint(1,"Inserted %d rows into BigQuery", len(tickets))
 	return nil
 }
 
