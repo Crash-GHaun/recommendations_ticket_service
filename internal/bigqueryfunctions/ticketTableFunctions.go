@@ -135,7 +135,22 @@ func AppendTicketsToTable(tableID string, tickets []*t.Ticket) error {
 
 func GetTicketByIssueKey(issueKey string) (*t.Ticket, error) {
 	// Build the SQL query to retrieve the ticket with the matching issueKey.
-	query := fmt.Sprintf("SELECT * FROM `%s.%s` WHERE IssueKey = '%s'", datasetID, ticketTableID, issueKey)
+	var GetTicketQuery = `SELECT 
+	IssueKey,
+    AS TargetContact,
+    FORMAT_TIMESTAMP('%%FT%%T%%z', CreationDate) AS CreationDate,
+    Status,
+    TargetResource,
+    RecommenderID,
+    FORMAT_TIMESTAMP('%%FT%%T%%z', LastUpdateDate) AS LastUpdateDate,
+    FORMAT_TIMESTAMP('%%FT%%T%%z', LastPingDate) AS LastPingDate,
+    FORMAT_TIMESTAMP('%%FT%%T%%z', SnoozeDate) AS SnoozeDate,
+    Subject,
+    Assignee
+	FROM %s.%s
+	WHERE IssueKey = %s
+	`
+	query := fmt.Sprintf(GetTicketQuery, datasetID, ticketTableID, issueKey)
 	tType := reflect.TypeOf(t.Ticket{})
 	// Execute the query.
 	ticket, err := QueryBigQueryToStruct(query, tType)
