@@ -137,7 +137,7 @@ func GetTicketByIssueKey(issueKey string) (*t.Ticket, error) {
 	// Build the SQL query to retrieve the ticket with the matching issueKey.
 	var GetTicketQuery = `SELECT 
 	IssueKey,
-    AS TargetContact,
+    TargetContact,
     FORMAT_TIMESTAMP('%%FT%%T%%z', CreationDate) AS CreationDate,
     Status,
     TargetResource,
