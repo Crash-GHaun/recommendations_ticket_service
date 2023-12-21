@@ -148,7 +148,7 @@ func GetTicketByIssueKey(issueKey string) (*t.Ticket, error) {
     Subject,
     Assignee
 	FROM %s.%s
-	WHERE IssueKey = %s
+	WHERE IssueKey = '%s'
 	`
 	query := fmt.Sprintf(GetTicketQuery, datasetID, ticketTableID, issueKey)
 	tType := reflect.TypeOf(t.Ticket{})
