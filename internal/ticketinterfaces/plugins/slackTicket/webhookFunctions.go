@@ -99,5 +99,5 @@ func snoozeFunction(s *SlackTicketService, event *slackevents.MessageEvent, spli
 		return s.sendSlackMessage(event.Channel, event.ThreadTimeStamp, "Something went wrong")
 	}
 	
-	return s.sendSlackMessage(event.Channel, event.ThreadTimeStamp, fmt.Sprintf("Snoozed Until: %d", ticket.SnoozeDate))
+	return s.sendSlackMessage(event.Channel, event.ThreadTimeStamp, fmt.Sprintf("Snoozed Until: %s", ticket.SnoozeDate))
 }
