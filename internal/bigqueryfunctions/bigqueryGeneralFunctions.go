@@ -22,6 +22,7 @@ import (
 
 	"cloud.google.com/go/bigquery"
 	"google.golang.org/api/iterator"
+	"google.golang.org/api/option"
 )
 
 var (
@@ -39,7 +40,13 @@ func InitBQ(dataset string, project string, ticketTable string) error {
 	ticketTableID = ticketTable
 	// Create a new BigQuery client.
 	ctx = context.Background()
-	bq, err := bigquery.NewClient(ctx, projectID)
+	bq, err := bigquery.NewClient(ctx, 
+		projectID,
+		option.WithScopes(
+			"https://www.googleapis.com/auth/bigquery",
+			//"https://www.googleapis.com/auth/drive",  Add additional scopes if you need external tables
+			),
+		)
 	if err != nil {
 		u.LogPrint(4,"Failed to create client: %v", err)
 		return err
