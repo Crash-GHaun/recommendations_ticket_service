@@ -99,10 +99,12 @@ func checkAndCreateNewTickets() error {
 		}(r)
 	}
 	wg.Wait()
-	err = b.AppendTicketsToTable(c.BqTicketTable, rowsToInsert)
-	if err != nil {
-		u.LogPrint(3,err)
-		return err
+	if len(rowsToInsert) > 0 {
+		err = b.AppendTicketsToTable(c.BqTicketTable, rowsToInsert)
+		if err != nil {
+			u.LogPrint(3,err)
+			return err
+		}
 	}
 	return err
 }
