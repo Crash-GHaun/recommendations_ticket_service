@@ -117,6 +117,7 @@ func (s *SlackTicketService) createChannelAsTicket(ticket *t.Ticket, row t.Recom
 				row.TargetResource[secondToLast+1:],
 				""))
 	ticket.RecommenderID = row.RecommenderName
+	ticket.UserRecommendation = false
 	
 	// Create Ticket Title
 	var titleBuffer bytes.Buffer
@@ -169,6 +170,7 @@ func (s *SlackTicketService) createThreadAsTicket(ticket *t.Ticket, row t.Recomm
 	ticket.LastUpdateDate = now
 	ticket.LastPingDate = now
 	ticket.SnoozeDate = time.Now().AddDate(0,0,7).Format(time.RFC3339)
+	ticket.UserRecommendation = false
 	// Create Ticket Title
 	var titleBuffer bytes.Buffer
 	err := s.titleTemplate.Execute(&titleBuffer, map[string]interface{}{"Row": row, "Ticket": ticket})

@@ -14,5 +14,6 @@ message Ticket {
   string SnoozeDate = 9;
   string Subject = 10;
   repeated string Assignee = 11;
+  bool UserRecommendation = 12;
 }
 

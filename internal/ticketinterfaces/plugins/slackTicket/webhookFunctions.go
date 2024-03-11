@@ -31,6 +31,8 @@ import (
 var functionMap = map[string]func(*SlackTicketService, *slackevents.MessageEvent, []string) error{
 	// All commands should be lower case.
 	"!snooze": snoozeFunction,
+	"!close": completeFunction,
+	"!complete": completeFunction,
 }
 
 func snoozeFunction(s *SlackTicketService, event *slackevents.MessageEvent, splitText []string) error {
@@ -100,4 +102,22 @@ func snoozeFunction(s *SlackTicketService, event *slackevents.MessageEvent, spli
 	}
 	
 	return s.sendSlackMessage(event.Channel, event.ThreadTimeStamp, fmt.Sprintf("Snoozed Until: %s", ticket.SnoozeDate))
+}
+
+func completeFunction(s *SlackTicketService, event *slackevents.MessageEvent, splitText []string) error {
+
+	ticket, err := s.parseAndGetTicket(event.Channel, event.ThreadTimeStamp)
+	if err != nil {
+		return s.sendSlackMessage(event.Channel, event.ThreadTimeStamp, "Something went wrong getting ticket")
+	}
+
+	ticket.LastUpdateDate = time.Now().Format(time.RFC3339)
+	ticket.Status = "Closed"
+
+	if err := b.AppendTicketsToTable("", []*t.Ticket{&ticket}); err != nil {
+		u.LogPrint(3, "[SLACK] Something went wrong updating ticket in BQ: %v", err)
+		return s.sendSlackMessage(event.Channel, event.ThreadTimeStamp, "Something went wrong")
+	}
+	
+	return s.sendSlackMessage(event.Channel, event.ThreadTimeStamp, fmt.Sprintf("This ticket has been closed"))
 }

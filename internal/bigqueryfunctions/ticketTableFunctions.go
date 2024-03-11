@@ -43,6 +43,7 @@ var ticketSchema = bigquery.Schema{
 	{Name: "SnoozeDate", Type: bigquery.TimestampFieldType},
 	{Name: "Subject", Type: bigquery.StringFieldType},
 	{Name: "Assignee", Type: bigquery.StringFieldType, Repeated: true},
+	{Name: "UserRecommendation", Type: bigquery.BooleanFieldType},
 }
 
 // An arguement could be made to make this a service that has it's own client.
