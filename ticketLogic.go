@@ -15,12 +15,16 @@
 package main
 
 import (
+	"bytes"
 	"fmt"
 	"reflect"
 	"sync"
+	"text/template"
+
 	b "ticketservice/internal/bigqueryfunctions"
 	"ticketservice/internal/ticketinterfaces"
 	u "ticketservice/internal/utils"
+	q "ticketservice/internal/userspacequeries"
 	"time"
 
 )
@@ -107,4 +111,23 @@ func checkAndCreateNewTickets() error {
 		}
 	}
 	return err
+}
+
+func createUserSpaceTickets(query string, data map[string]interface{}) error {
+	tmpl, err := template.New("query").Parse(query)
+	if err != nil {
+		return fmt.Errorf("error parsing query template: %v", err)
+	}
+	var queryBuffer bytes.Buffer
+	if err := tmpl.Execute(&queryBuffer, data); err != nil {
+		return fmt.Errorf("error executing query template: %v", err)
+	}
+	generatedQuery := queryBuffer.String()
+	u.LogPrint(1, "Querying for new User Space Tickets for %v", query)
+	t := reflect.TypeOf(q.QueriesMap[query].ResponseStruct)
+	results, err := b.QueryBigQueryToStruct(generatedQuery, t)
+
+	u.LogPrint(1,"Results:", results)
+	
+	return nil
 }
