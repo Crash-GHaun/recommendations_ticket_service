@@ -80,6 +80,7 @@ var CheckQueryTpl = `SELECT
   f.impact_currency_code as ImpactCurrencyCode,
   f.description as Description,
   TargetResource,
+  TO_JSON_STRING(JSON_EXTRACT(PARSE_JSON(asset_data), '$.labels')) as labels,
   STRUCT(
     IFNULL(t.IssueKey, "") AS IssueKey,
     IFNULL(t.TargetContact, "") AS TargetContact,

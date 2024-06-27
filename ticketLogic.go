@@ -74,7 +74,11 @@ func checkAndCreateNewTickets() error {
 				return nil
 			}
 			u.LogPrint(1, "Retrieving Routing Information")
-			routingRows, err := b.GetRoutingRowsByProjectID(c.BqRoutingTable,row.ProjectId)
+			routingRows, err := b.GetRoutingRowsByProjectID(
+				c.BqRoutingTable,
+				row.ProjectId,
+				row.TargetResource,
+				row.Labels)
 			if err != nil {
 				u.LogPrint(3,"Failed to get routing information")
 				return err
@@ -123,7 +127,7 @@ func createUserSpaceTickets(query string, data map[string]interface{}) error {
 		return fmt.Errorf("error executing query template: %v", err)
 	}
 	generatedQuery := queryBuffer.String()
-	u.LogPrint(1, "Querying for new User Space Tickets for %v", query)
+	u.LogPrint(1, "Querying for new User Space Tickets")
 	t := reflect.TypeOf(q.QueriesMap[query].ResponseStruct)
 	results, err := b.QueryBigQueryToStruct(generatedQuery, t)
 

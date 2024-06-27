@@ -150,13 +150,17 @@ bigquery.Schema{
 
 ### Ticket Routing
 
-As of the current version, all routing of recommendations is done based on the `ProjectID`. Each recommendation gets mapped to a `ProjectID`, which then provides the necessary routing information for ticket creation.
+As of the current version, all routing of recommendations is done starting at the `ProjectID`. Each recommendation gets mapped to a `ProjectID`, which then provides the necessary routing information for ticket creation. If further routing needs to be accomplished it can be accomplished by adding Device/VM names or labels to the field 'DeviceNamesOrLabels'. 
 
 ### Target Field
 
 The `Target` field is determined by the desired location or component where the ticket will be created. This is based on the specific ticket implementation in use.
 
 For example, if you are using Slack (with the `SLACK_CHANNEL_AS_TICKET` environment variable set to `false`), the `Target` would be the Slack channel name where a thread should be initiated.
+
+### DeviceNamesOrLabels Field
+
+On testing it became apparnt that routing soly on projectID might not be enough for large enterprises. In order to further route tickets you can either route by device name (VM name for now) or by Labels associated with the machine. To held decrease BQ Rows this field is repeated, so it can accept multiple devices or labels. 
 
 ### TicketSystemIdentifiers Field
 
