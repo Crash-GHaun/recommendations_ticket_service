@@ -80,7 +80,7 @@ func checkAndCreateNewTickets() error {
 				row.TargetResource,
 				row.Labels)
 			if err != nil {
-				u.LogPrint(3,"Failed to get routing information")
+				u.LogPrint(3,"Failed to get routing information: %v", err)
 				return err
 			}
 			// Check if the length of routingRows is zero
