@@ -70,7 +70,7 @@ and EXISTS(
 limit 1`
 
 func GetRoutingRowsByProjectID(tableID string, project string, target_resource string, labels string)([]routingRow, error){
-	u.log(1, "Labels: %v", labels)
+	u.LogPrint(1, "Labels: %v", labels)
 	devicelabelarray, err := JSONToArray(labels)
 	if err != nil {
 		return nil, err
