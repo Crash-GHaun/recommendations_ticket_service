@@ -38,12 +38,20 @@ var routingSchema = bigquery.Schema{
 
 // JSONToArray takes a JSON string and returns an array of string{} values
 func JSONToArray(jsonStr string) ([]string, error) {
-    var array []string
-    err := json.Unmarshal([]byte(jsonStr), &array)
+	var target map[string]any
+    err := json.Unmarshal([]byte(jsonStr), &target)
     if err != nil {
         return nil, err
     }
-    return array, nil
+    values := make([]string, 0, len(target))
+    for _, value := range target {
+        strValue, ok := value.(string)
+        if !ok {
+            return nil, fmt.Errorf("value %v is not a string", value)
+        }
+        values = append(values, strValue)
+    }
+    return values, nil
 }
 
 // ConvertArrayToString takes an array of strings and converts it to a single string
@@ -73,6 +81,7 @@ func GetRoutingRowsByProjectID(tableID string, project string, target_resource s
 	u.LogPrint(1, "Labels: %v", labels)
 	devicelabelarray, err := JSONToArray(labels)
 	if err != nil {
+		u.LogPrint(1, "Error unmarshalling: %v", err)
 		return nil, err
 	}
 	devicelabelarray = append(devicelabelarray, target_resource)
