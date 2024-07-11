@@ -47,7 +47,8 @@ func JSONToArray(jsonStr string) ([]string, error) {
     for _, value := range target {
         strValue, ok := value.(string)
         if !ok {
-            return nil, fmt.Errorf("value %v is not a string", value)
+			u.LogPrint(1, "Skipping because: %v : is not a string", value)
+            continue
         }
         values = append(values, strValue)
     }
