@@ -31,7 +31,11 @@ var routingSchema = bigquery.Schema{
 	{Name: "TicketSystemIdentifiers", Type: bigquery.StringFieldType, Repeated: true},
 }
 
-var getTargetByProjectIDQuery = `Select * from %v.%v.%v where ProjectID = "%v" limit 1`
+var getTargetByProjectIDQuery = `Select * from %v.%v.%v 
+				left join unnest(DeviceNamesOrLabels) as dvc
+				where ProjectID = "%v" 
+    				order by 5
+				limit 1`
 
 func GetRoutingRowsByProjectID(tableID string, project string)([]routingRow, error){
 	query := fmt.Sprintf(getTargetByProjectIDQuery,projectID, datasetID, tableID, project)
